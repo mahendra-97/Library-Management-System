@@ -1,0 +1,13 @@
+*.pyc
+__pycache__/
+db.sqlite3
+*.log
+*.pot
+*.py[co]
+*.swp
+*.sublime-project
+*.sublime-workspace
+.env
+venv/
+staticfiles/
+media/
