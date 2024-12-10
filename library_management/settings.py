@@ -38,7 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'library_api',
-    
+    'rest_framework',
+    'drf_yasg',
+
 ]
 
 MIDDLEWARE = [
@@ -77,8 +79,16 @@ WSGI_APPLICATION = 'library_management.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        # 'ENGINE': 'django.db.backends.sqlite3',
+        # 'NAME': BASE_DIR / 'db.sqlite3',
+
+        # MySQL Database Configuration
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'library_management',
+        'USER': 'root',
+        'PASSWORD': 'dbda',
+        'HOST': 'localhost',
+        'PORT': '3306',        
     }
 }
 
