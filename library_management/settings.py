@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'library_api',
     'rest_framework',
     'rest_framework_simplejwt',
-    'drf_yasg',
+
+    'drf_yasg'
 
 ]
 

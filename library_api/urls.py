@@ -1,5 +1,12 @@
 from django.urls import path
-from .views import CreateLibraryUserView, BorrowRequestsView, UserBorrowHistoryView, BooksView, PersonalBorrowHistoryView, DownloadBorrowHistoryView
+from .views import CreateBookView, CreateLibraryUserView, BorrowRequestsView, UserBorrowHistoryView, BooksView, PersonalBorrowHistoryView, DownloadBorrowHistoryView
+
+
+
+# =====================================================
+
+
+
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework.permissions import AllowAny
@@ -32,18 +39,23 @@ schema_view = get_schema_view(
     permission_classes=(AllowAny,),
 )
 
-# Add URL patterns for obtaining JWT tokens
+
+
+
+# =====================================================
 urlpatterns = [
     # API endpoints
     path('user/books/', BooksView.as_view(), name='books'),
     path('user/borrow-history/', PersonalBorrowHistoryView.as_view(), name='personal-borrow-history'),
+
     path('librarian/create-user/', CreateLibraryUserView.as_view(), name='create-user'),
+    path('librarian/create-book/', CreateBookView.as_view(), name='create_book'),
     path('librarian/borrow-requests/', BorrowRequestsView.as_view(), name='borrow-requests'),
     path('librarian/borrow-requests/<int:pk>/', BorrowRequestsView.as_view(), name='update-borrow-request'),
     path('librarian/user-history/<int:user_id>/', UserBorrowHistoryView.as_view(), name='user-borrow-history'),
+    
     path('user/download-history/', DownloadBorrowHistoryView.as_view(), name='download-borrow-history'),
 
 
-    # Swagger UI
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger-ui'),
-]
+# Swagger UI
+    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger-ui'),]
