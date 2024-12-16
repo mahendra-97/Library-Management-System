@@ -98,7 +98,7 @@ class BookInstance(models.Model):
 class BorrowRequest(models.Model):
     STATUS_CHOICES = [('pending', 'Pending'), ('approved', 'Approved'), ('denied', 'Denied')]
 
-    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
     borrow_date = models.DateField()
     return_date = models.DateField()

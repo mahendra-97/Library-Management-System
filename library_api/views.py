@@ -33,14 +33,13 @@ class BooksView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = BorrowRequestSerializer(data=request.data, context={'request': request})  # Pass request context
-
+        serializer = BorrowRequestSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
+            print("Serializer is valid")
             book = serializer.validated_data['book']
             borrow_date = serializer.validated_data['borrow_date']
             return_date = serializer.validated_data['return_date']
 
-            # Check for overlapping borrow requests
             if BorrowRequest.objects.filter(
                 book=book,
                 status='approved',
@@ -48,12 +47,14 @@ class BooksView(APIView):
                 return_date__gt=borrow_date
             ).exists():
                 return Response({"error": "This book is already borrowed during the requested period."},
-                                 status=status.HTTP_400_BAD_REQUEST)
+                                status=status.HTTP_400_BAD_REQUEST)
 
             borrow_request = serializer.save()
             return Response(BorrowRequestSerializer(borrow_request).data, status=status.HTTP_201_CREATED)
         
+        print("Serializer Errors:", serializer.errors)  # Log errors
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 # View for handling borrow requests (for users)
 class BorrowRequestsView(APIView):
@@ -116,6 +117,7 @@ class CreateLibraryUserView(APIView):
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            print(traceback.format_exc())
             logger.error(f"Error occurred while creating user: {e}")
             return Response({"error": "An error occurred while creating the user."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
