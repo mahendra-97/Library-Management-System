@@ -5,13 +5,18 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import Book, BorrowRequest, User
-from .serializers import UserSerializer, BookSerializer, BorrowRequestSerializer
+from .serializers import UserSerializer, BookSerializer, BorrowRequestSerializer, CustomTokenObtainPairSerializer
 import logging
 
 logger = logging.getLogger(__name__)
 
-# View for creating a book (for librarian)
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+
+
 class CreateBookView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -23,7 +28,6 @@ class CreateBookView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# View for listing books (for users and librarians)
 class BooksView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -35,28 +39,23 @@ class BooksView(APIView):
     def post(self, request):
         serializer = BorrowRequestSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
-            print("Serializer is valid")
+            user = serializer.validated_data['user']
+            if user != request.user:
+                return Response({"error": "You cannot create a borrow request for another user."}, status=status.HTTP_403_FORBIDDEN)
             book = serializer.validated_data['book']
             borrow_date = serializer.validated_data['borrow_date']
             return_date = serializer.validated_data['return_date']
 
-            if BorrowRequest.objects.filter(
-                book=book,
-                status='approved',
-                borrow_date__lt=return_date,
-                return_date__gt=borrow_date
-            ).exists():
-                return Response({"error": "This book is already borrowed during the requested period."},
-                                status=status.HTTP_400_BAD_REQUEST)
+            is_exist = BorrowRequest.objects.filter(book=book, status='approved', borrow_date__lt=return_date, return_date__gt=borrow_date)
+            if is_exist.exists():
+                return Response({"error": "This book is already borrowed during the requested period."}, status=status.HTTP_400_BAD_REQUEST)
 
             borrow_request = serializer.save()
             return Response(BorrowRequestSerializer(borrow_request).data, status=status.HTTP_201_CREATED)
         
-        print("Serializer Errors:", serializer.errors)  # Log errors
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# View for handling borrow requests (for users)
 class BorrowRequestsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -72,15 +71,13 @@ class BorrowRequestsView(APIView):
             borrow_date = serializer.validated_data['borrow_date']
             return_date = serializer.validated_data['return_date']
 
-            # Check for overlapping borrow requests
             if BorrowRequest.objects.filter(
                 book=book,
                 status='approved',
                 borrow_date__lt=return_date,
                 return_date__gt=borrow_date
             ).exists():
-                return Response({"error": "This book is already borrowed during the requested period."},
-                                 status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "This book is already borrowed during the requested period."}, status=status.HTTP_400_BAD_REQUEST)
 
             borrow_request = serializer.save(user=request.user)
             return Response(BorrowRequestSerializer(borrow_request).data, status=status.HTTP_201_CREATED)
@@ -107,7 +104,6 @@ class CreateLibraryUserView(APIView):
 
     def post(self, request):
         try:
-            # Ensure the email is unique
             if User.objects.filter(email=request.data.get('email')).exists():
                 return Response({"error": "Email already exists"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -136,7 +132,7 @@ class UserBorrowHistoryView(APIView):
         return Response(serializer.data)
 
 
-# View for personal borrow history (for users)
+
 class PersonalBorrowHistoryView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -155,7 +151,6 @@ class DownloadBorrowHistoryView(APIView):
         if not borrow_requests:
             return Response({"error": "No borrow history found for this user."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Create the HttpResponse object with CSV header
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="borrow_history.csv"'
 

@@ -1,6 +1,19 @@
+import traceback
 from django.utils import timezone
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import User, Book, BorrowRequest
+
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        # Use your custom authentication logic if necessary
+        data = super().validate(attrs)
+        data['username'] = self.user.username
+        data['email'] = self.user.email
+        data['role'] = self.user.role
+        return data
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -56,7 +69,9 @@ class BorrowRequestSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Request context is required.")
         
         request_user = request.user
+        print(request_user)
         if not isinstance(request_user, User):
+            print(traceback.format_exc())
             raise serializers.ValidationError("The user is not a valid User instance.")
         validated_data['user'] = request_user
         
